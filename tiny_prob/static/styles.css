@@ -1,0 +1,92 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+#refreshRate {
+    margin-left: 10px;
+}
+
+main {
+    display: flex;
+    flex: 1;
+}
+
+.panel {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#variables {
+    border-right: 1px solid #ccc;
+}
+
+#variablesTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#variablesTable th, #variablesTable td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+#logs {
+    margin-top: 20px;
+}
+
+#logList {
+    list-style: none;
+    padding: 0;
+}
+
+#logList li {
+    margin-bottom: 10px;
+}
+
+#canvasContainer {
+    display: flex;
+    flex-direction: column;
+}
+
+.canvas-wrapper {
+    margin-top: 20px;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
