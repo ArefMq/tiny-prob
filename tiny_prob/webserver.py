@@ -163,7 +163,7 @@ class WebServer(Bottle):
             "debug": True,
             "reloader": False,
             "server": self.__server,
-            "quiet": True,
+            "quiet": False,
         }
         if blocking:
             self.run(**args)

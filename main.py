@@ -1,7 +1,9 @@
 import random
 from time import sleep
 
-from tiny_prob import TinyProb
+from tiny_prob import TinyProb, SetConfig, capture_all
+
+SetConfig(open_browser=False, ask_before_exit=True)
 
 
 # @TinyProb.capture_all
@@ -58,13 +60,13 @@ from tiny_prob import TinyProb
 
 if __name__ == "__main__":
     # ---------------------------------------------------------------------------------------------
-    # with TinyProb(open_browser=False, ask_before_exit=True) as tp:
+    # with TinyProbCore(open_browser=False, ask_before_exit=True) as tp:
     #     tp.add_pin("a", 1)
     #     # Then you can use `curl http://127.0.0.1:8080/all_pins` to see the result
 
 
     # ---------------------------------------------------------------------------------------------
-    # with TinyProb(open_browser=False, ask_before_exit=True) as tp:
+    # with TinyProbCore(open_browser=False, ask_before_exit=True) as tp:
     #     import logging
     #     logger = logging.getLogger("tiny_prob")
 
@@ -76,7 +78,7 @@ if __name__ == "__main__":
 
 
     # ---------------------------------------------------------------------------------------------
-    # with TinyProb(open_browser=False) as tp:
+    # with TinyProbCore(open_browser=False) as tp:
     #     getter, _ = tp.add_pin("var", 10)
 
     #     for i in range(10):
@@ -84,23 +86,18 @@ if __name__ == "__main__":
     #         sleep(1)
 
     # ---------------------------------------------------------------------------------------------
-    # with TinyProb(open_browser=False, ask_before_exit=True) as tp:
+    # with TinyProbCore(open_browser=False, ask_before_exit=True) as tp:
     #     ev = tp.add_event_pin("event1")
     #     ev += lambda: print("Event 1 triggered")
     #     ev += lambda x: print(f"Event 1 triggered with value {x}")
 
     # ---------------------------------------------------------------------------------------------
-    # with TinyProb(open_browser=False, ask_before_exit=True) as tp:
+    # with TinyProbCore(open_browser=False, ask_before_exit=True) as tp:
     #     prob = tp.add_debug_prob("event1")
     #     prob.wait()
     #     print("Continuing after event 1")
 
     # ---------------------------------------------------------------------------------------------
-    with TinyProb(open_browser=False, ask_before_exit=True) as tp:
-        prob = tp.add_debug_prob("event1")
-        prob.wait()
-        print("Continuing after event 1")
-
 
     # app1 = TestApp1()
     # app2 = TestApp2()
@@ -114,3 +111,21 @@ if __name__ == "__main__":
     #     app2.some_function()
     #     app3.debug_prob()
     #     app4.cycle()
+
+
+    @capture_all
+    class MyClass:
+        a: int = 10
+
+        def cycle(self):
+            self.a = (self.a + 1) % 10
+            print(">>" * 24, f"Setting value to {self.a}")
+    
+    with TinyProb() as tp:
+        # my_class = MyClass()
+        getter, _ = tp.add_pin("var", 10)
+
+        for i in range(100):
+            # my_class.cycle()
+            print("var:", getter())
+            sleep(5)

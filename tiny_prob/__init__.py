@@ -1,176 +1,172 @@
-import json
-import logging
-import os
-from time import time
-from typing import Any, Callable, TypeVar
-
-from tiny_prob.pins import EventPin, EventProb, Pin4Type, PinBase
-from tiny_prob.webserver import WebServer
-
-
-TINY_PROB_VERSION = "0.0.1"
-TINY_PROB_AUTO_RUN = bool(os.environ.get("TINY_PROB_AUTO_RUN", False))
-
+from tiny_prob.pins import EventProb
+from .tiny_prob import TinyProb as TinyProbClass
+from typing import Any, TypeVar
 
 T = TypeVar("T")
+TINY_PROB_VERSION = "0.0.1"
 
 
-class TinyProb(WebServer):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.route("/all_pins", callback=self.__all_pins, method="GET")
-        self.route("/pin_value", callback=self.__pin_value, method="POST")
-        self.route("/logs", callback=self.__read_logs, method="GET")
-        # self.route("/__internal", callback=self.__internal_comm, method="POST")
-        self.__pins: dict[str, PinBase] = {}
-        self.__logs: list[tuple[float, str]] = []  # [(timestamp, message)}, ...]
+class __TinyProbSingleton:
+    __instance = None
+    __config = None
 
-    def __all_pins(self) -> str:
-        """
-        This function returns all the pins in the system along with their meta attributes.
-        """
-        return json.dumps([val.to_dict() for val in self.__pins.values()])
-
-    def __pin_value(self) -> str:
-        """
-        Controls the Values of the Pins, both reading and writing.
-        This function is called via Post request. In the body of the request,
-        the following JSON is expected:
-        {
-            "write_pins": {"pin_name": "value_to_set", ...},  # Optional
-            "read_pins": ["pin_name", ...]  # Optional
-        }
-        """
-        write_pins = self._post_param("write_pins", None)
-        read_pins = self._post_param("read_pins", None)
-        assert isinstance(write_pins, dict) or write_pins is None, "write_pins must be a dict"+repr(write_pins)
-        assert isinstance(read_pins, list) or read_pins is None, "read_pins must be a list"+repr(read_pins)
-        res = {}
-
-        print("write_pins:: ", repr(write_pins))
-        print("read_pins:: ", repr(read_pins))
-
-        if write_pins is not None:
-            for pin_name, value in write_pins.items():
-                self.__pins[pin_name].write_value(value)
-
-        if read_pins is not None:
-            res["read_pins"] = {
-                pin_name: self.__pins[pin_name].read_value() for pin_name in read_pins
-            }
-
-        print("res:: ", repr(res))
-        return json.dumps(res)
-
-    def __read_logs(self) -> str:
-        """
-        This function returns all the logs in the system.
-        The GET request will have a timestamp parameter (?timestamp=1234567890)
-        to get logs after a certain timestamp.
-        """
-        # FIXME: come up with a better implementation of logs
-        timestamp = int(self._get_param("timestamp", 0))
-        return json.dumps(
-            [{"timestamp": t, "message": m} for t, m in self.__logs if t >= timestamp]
-        )
-
-    def append_log(self, message: str, timestamp: float | None = None) -> None:
-        """
-        Append a log to the system.
-
-        Args:
-            message (str): The message to log.
-            timestamp (int, optional): The timestamp of the log. Defaults to Now.
-        """
-        if timestamp is None:
-            timestamp = time()
-        self.__logs.append((timestamp, message))
-
-    def get_log_handler(self) -> logging.StreamHandler:
-        """
-        Get a log handler that can be used to append logs to the system.
-        """
-
-        class Stream:
-            def write(_, message):
-                self.append_log(message)
-        
-        class CustomStreamHandler(logging.StreamHandler):
-            terminator = ""
-
-        return CustomStreamHandler(Stream())
-
-    def add_pin(
-        self, name: str, var: Any, namespace: str = ""
-    ) -> tuple[Callable, Callable]:
-        """
-        Get a variable (name: var) and add it as a pin to the system.
-        Return a setter and a getter function for the pin.
-        """
-        pin = Pin4Type(name, namespace, var)
-        self.__pins[name] = pin
-
-        def setter(_=None, value: Any=None):
-            pin.write_value(value)
-
-        def getter(_=None):
-            return pin.read_value()
-
-        return getter, setter
-
-    def add_event_pin(self, name: str, namespace: str = "") -> EventPin:
-        pin = EventPin(name, namespace=namespace)
-        self.__pins[name] = pin
-        return pin
+    def __new__(cls):
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
     
-    def add_debug_prob(self, name: str, namespace: str = "") -> EventProb:
-        return EventProb(self.add_event_pin(name, namespace))
+    @classmethod
+    def set_config(cls, **kwargs):
+        cls.__config = kwargs
 
-    @staticmethod
-    def __capture_variable(cls: T, name: str, value: Any) -> None:
-        """
-        Capture a variable (name: value) of a class (cls) and add it as a pin.
-        """
-        getter, setter = TinyProb.instance().add_pin(name, value, cls.__name__)
-        setattr(cls, name, property(getter, setter))
+    def __init__(self):
+        self.__tiny_prob = TinyProbClass(**self.__config)
 
-    @staticmethod
-    def capture_all(cls: T) -> T:
-        attributes = list(vars(cls).items())
-        for name, value in attributes:
-            if name.startswith("__") or callable(value):
-                continue
-            try:
-                TinyProb.__capture_variable(cls, name, value)
-            except NotImplementedError:
-                print(
-                    f"[Warning] Variable '{name}' of type '{type(value)}' is not supported for probing."
-                )  # FIXME: change this to a log
-                continue
+    def __getattr__(self, name):
+        return getattr(self.__tiny_prob, name)
+
+    def __setattr__(self, name, value):
+        if name == "_TinyProbSingleton__tiny_prob":
+            super().__setattr__(name, value)
+        else:
+            setattr(self.__tiny_prob, name, value)
+
+    def __delattr__(self, name):
+        if name == "_TinyProbSingleton__tiny_prob":
+            super().__delattr__(name)
+        else:
+            delattr(self.__tiny_prob, name)
+
+    def __enter__(self):
+        return self.__tiny_prob.__enter__()
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self.__tiny_prob.__exit__(exc_type, exc_value, traceback)
+
+def SetConfig(**kwargs) -> None:
+    """
+    Set the configuration for the TinyProb instance.
+    Using this function is optional. If not called, the default configuration will be used.
+    NOTE: This function should be called before any other TinyProb function is called.
+
+    Args:
+        FIXME: fill this
+        open_browser=False
+        ask_before_exit=True
+        static_root
+        template_args
+        "debug": True,
+        "reloader": False,
+        "quiet": True,
+
+    Example:
+    ```python
+    SetConfig(port=8080, host="localhost", open_browser=False)
+    ```
+    """
+    __TinyProbSingleton.set_config(**kwargs)
+
+
+def TinyProb() -> TinyProbClass:
+    """
+    Get the TinyProb instance.
+    Please note that this function is returning a singleton instance of TinyProb.
+
+    Example:
+    ```python
+
+    @capture_all
+    class App:
+        ...
+
+    With TinyProb() as tp:
+        # webserver is running inside the context manager.
+        # Any captured values will be available here.
+        app = App()
+    ```
+    """
+    return __TinyProbSingleton()  # type: ignore
+
+
+def __capture_variable(cls: T, name: str, value: Any) -> None:
+    getter, setter = TinyProb().add_pin(name, value, cls.__name__)
+    setattr(cls, name, property(getter, setter))
+
+
+def capture_all(cls: T) -> T:
+    """
+    Capture all the variables of a class.
+    How? All variables are replaced with a Pin, and then getter/setter functions are added to the 
+    class to access the value of the variable. Any variable not supported by the Pin system will be
+    ignored.
+
+    Example:
+    ```python
+    @capture_all
+    class App:
+        a: int = 10
+        b: str = "Hello"
+        c: dict = {"a": 1, "b": 2, "c": 3}
+        d: SomeClass = SomeClass()  # will be ignored
+    ```
+    """
+    attributes = list(vars(cls).items())
+    for name, value in attributes:
+        if name.startswith("__") or callable(value):
+            continue
+        try:
+            __capture_variable(cls, name, value)
+        except NotImplementedError:
+            print(
+                f"[Warning] Variable '{name}' of type '{type(value)}' is not supported for probing."
+            )  # FIXME: change this to a log
+            continue
+    return cls
+
+
+def capture(*args):
+    """
+    Capture only the variables passed as arguments, and replace them with Pins. Getter/setter will be
+    added to the class to access the value of the variable.
+
+    Example:
+    ```python
+    @capture("a", "b")
+    class App:
+        a: int = 10
+        b: str = "Hello"
+        c: dict = {"a": 1, "b": 2, "c": 3}  # will be ignored
+    ```
+    """
+    def decorator(cls: T) -> T:
+        for name in args:
+            __capture_variable(cls, name, getattr(cls, name))
         return cls
 
-    @staticmethod
-    def capture(*args):
-        def decorator(cls: T) -> T:
-            for name in args:
-                TinyProb.__capture_variable(cls, name, getattr(cls, name))
-            return cls
+    return decorator
 
-        return decorator
 
-    @staticmethod
-    def capture_primitive(cls: T) -> T:
-        for name, value in vars(cls).items():
-            if name.startswith("__") or callable(value):
-                continue
-            if not isinstance(value, (int, float, str, bool)):
-                continue
-            try:
-                TinyProb.__capture_variable(cls, name, value)
-            except NotImplementedError:
-                pass
-        return cls
+def capture_primitive(cls: T) -> T:
+    """
+    Capture all the primitive variables of a class. Primitive variables are int, float, str, bool.
 
-    @staticmethod
-    def StaticProb(name: str) -> EventProb:
-        return TinyProb.instance().add_event_pin(name)
+    Example:
+    ```python
+    @capture_primitive
+    class App:
+        a: int = 10
+        b: str = "Hello"
+        c: dict = {"a": 1, "b": 2, "c": 3}  # will be ignored
+    ```
+    """
+    for name, value in vars(cls).items():
+        if name.startswith("__") or callable(value):
+            continue
+        if not isinstance(value, (int, float, str, bool)):
+            continue
+        try:
+            __capture_variable(cls, name, value)
+        except NotImplementedError:
+            pass
+    return cls
+
