@@ -10,9 +10,10 @@ class __TinyProbSingleton:
     __instance = None
     __config = None
 
-    def __new__(cls):
-        if not cls.__instance:
-            cls.__instance = super().__new__(cls)
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
         return cls.__instance
     
     @classmethod
@@ -85,7 +86,7 @@ def TinyProb() -> TinyProbClass:
         app = App()
     ```
     """
-    return __TinyProbSingleton()  # type: ignore
+    return __TinyProbSingleton.get_instance()  # type: ignore
 
 
 def __capture_variable(cls: T, name: str, value: Any) -> None:
