@@ -25,13 +25,13 @@ DEFAULT_INDEX_TEMPLATE = """
             <select id="refreshRate">
                 <option value="100">100ms</option>
                 <option value="500">500ms</option>
-                <option value="1000" selected>1sec</option>
+                <option value="1000">1sec</option>
                 <option value="2000">2sec</option>
                 <option value="5000">5sec</option>
                 <option value="30000">30sec</option>
                 <option value="60000">1min</option>
                 <option value="300000">5min</option>
-                <option value="1800000">30min</option>
+                <option value="1800000" selected>30min</option>
                 <option value="3600000">1h</option>
                 <option value="-1">Manual</option>
             </select>
@@ -45,7 +45,7 @@ DEFAULT_INDEX_TEMPLATE = """
                 <thead>
                     <tr>
                         <th>Topic</th>
-                        <th>Value</th>
+                        <th>Data</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -1,3 +1,13 @@
+:root {
+    --primary-color: #16697A;
+    --secondary-color: #b5dfe8;
+
+    --primary-bg-color: #f9f1ea;
+    --secondary-bg-color: #489FB5;
+
+    --level-1-warning: #FFA62B;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -5,14 +15,16 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    background-color: var(--primary-bg-color);
+    color: var(--primary-color);
 }
 
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #333;
-    color: #fff;
+    background-color: var(--secondary-bg-color);
+    color: var(--secondary-color);
     padding: 10px 20px;
 }
 
@@ -39,6 +51,11 @@ header {
 main {
     display: flex;
     flex: 1;
+    font-family: "Comic Sans MS", cursive;
+}
+
+main button {
+    font-family: "Comic Sans MS", cursive;
 }
 
 .panel {
@@ -85,8 +102,18 @@ main {
 }
 
 footer {
-    background-color: #333;
-    color: #fff;
+    background-color: var(--secondary-bg-color);
+    color: var(--secondary-color);
     text-align: center;
     padding: 10px 0;
+}
+
+footer a {
+    text-decoration: none;
+    color: var(--secondary-color);
+    border-bottom: 1px solid var(--secondary-color);
+}
+
+.edit-button {
+    margin-left: 10px;
 }

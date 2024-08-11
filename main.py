@@ -113,19 +113,21 @@ if __name__ == "__main__":
     #     app4.cycle()
 
 
-    @capture_all
-    class MyClass:
-        a: int = 10
+    # @capture_all
+    # class MyClass:
+    #     a: int = 10
 
-        def cycle(self):
-            self.a = (self.a + 1) % 10
-            print(">>" * 24, f"Setting value to {self.a}")
+    #     def cycle(self):
+    #         self.a = (self.a + 1) % 10
+    #         print(">>" * 24, f"Setting value to {self.a}")
     
     with TinyProb() as tp:
         # my_class = MyClass()
-        getter, _ = tp.add_pin("var", 10)
+        getter, setter = tp.add_pin("var", 10)
 
-        for i in range(100):
+        for _ in range(100000):
             # my_class.cycle()
-            print("var:", getter())
-            sleep(5)
+            # print("var:", getter())
+            v = getter()
+            setter(value=(v + 1) % 100)
+            sleep(1)

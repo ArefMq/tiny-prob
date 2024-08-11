@@ -26,6 +26,7 @@ class PinBase(ABC):
     value: Any | None = None
     html: str | None = None
     topic_html: str | None = None
+    editable_html: str | None = None
     _: KW_ONLY
     type: str
     _readable: bool = True
@@ -35,13 +36,20 @@ class PinBase(ABC):
     def compile_html(self) -> str:
         value_html = self.html
         if value_html is None:
-            value_html = f'<input type="text" class="value" value="{self.value}">'
+            value_html = f'<span class="value" id="value">{self.value}</span>'
 
         topic_html = self.topic_html
         if topic_html is None:
             topic_html = f'<span class="title">{self.name}</span>'
 
-        return {"topic": topic_html, "value": value_html}
+        editable_html = self.editable_html
+        if editable_html is None:
+            editable_html = f'<input class="edit-input" id="edit-input" type="text" value="{self.value}">'
+
+        res = {"topic": topic_html, "value": value_html}
+        if self._writable:
+            res["editable_html"] = editable_html
+        return res
 
     def to_dict(self) -> str:
         return {
@@ -72,6 +80,17 @@ class NumericPin(PinBase):
         res = super().compile_html()
         res["value"] = res["value"].replace('type="text"', 'type="number"')
         return res
+    
+    def read_value(self) -> Any:
+        value = super().read_value()
+        try:
+            value = int(value)
+        except ValueError:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        return value
 
 
 @dataclass
@@ -84,6 +103,10 @@ class BooleanPin(PinBase):
         res = super().compile_html()
         res["value"] = res["value"].replace('type="text"', 'type="checkbox"')
         return res
+    
+    def read_value(self) -> Any:
+        value = super().read_value()
+        return bool(value)
 
 
 @dataclass
