@@ -74,7 +74,7 @@ class PinBase(ABC):
 class NumericPin(PinBase):
     type: str = "numeric"
     value: int | float | None = None
-    html: str | None = None
+    editable_html: str = "<input class='edit-input' id='edit-input' type='number' value='{self.value}'>"
 
     def compile_html(self) -> str:
         res = super().compile_html()
@@ -97,7 +97,7 @@ class NumericPin(PinBase):
 class BooleanPin(PinBase):
     type: str = "boolean"
     value: bool | None = None
-    html: str | None = None
+    editable_html: str = "<input class='edit-input' id='edit-input' type='checkbox' value='{self.value}'>"
 
     def compile_html(self) -> str:
         res = super().compile_html()
@@ -161,14 +161,18 @@ class ImagePin(PinBase):
 class EventPin(PinBase):
     type: str = "event"
     callbacks: list[Callable] = field(default_factory=list)
-    html: str | None = None
+    html: str = "<Button class='value' id='value' type='button' onClick='triggerEvent({pin_name}, \"true\")' >Trigger</Button>"
     _readable: bool = False
+    _writable: bool = False
+
+    def compile_html(self) -> str:
+        res = super().compile_html()
+        res["value"] = res["value"].replace("{pin_name}", f'"{self.name}"')
+        return res
+
 
     def __post_init__(self):
         assert self.value is None, "Event pins can not have a values."
-
-    def compile_html(self) -> str:
-        return super().compile_html().replace('type="text"', 'type="event"')
 
     def add_callback(self, callback: Callable) -> None:
         self.callbacks.append(callback)
@@ -179,7 +183,7 @@ class EventPin(PinBase):
 
     def write_value(self, value: Any) -> None:
         for callback in self.callbacks:
-            if callback.__code__.co_argcount > 0:
+            if callback.__func__.__code__.co_argcount > 0:
                 callback(value)
             else:
                 callback()

@@ -109,6 +109,7 @@ class WebServer(Bottle):
         static_root: str | None = None,
         open_browser: bool = False,
         ask_before_exit: bool = False,
+        quiet: bool = False,
     ) -> None:
         super().__init__()
         self.__app_thread: Thread | None = None
@@ -117,6 +118,7 @@ class WebServer(Bottle):
         self.__open_browser_on_start = open_browser
         self.__ask_before_exit = ask_before_exit
         self.__server: TinyServer | None = None
+        self.__quiet = quiet
 
         # Fix Routes
         self.route("/", callback=self.index)
@@ -163,7 +165,7 @@ class WebServer(Bottle):
             "debug": True,
             "reloader": False,
             "server": self.__server,
-            "quiet": False,
+            "quiet": self.__quiet,
         }
         if blocking:
             self.run(**args)

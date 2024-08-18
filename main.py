@@ -1,9 +1,17 @@
-import random
 from time import sleep
 
-from tiny_prob import TinyProb, SetConfig, capture_all
+from tiny_prob import (
+    TinyProb,  # For starting a server
+    SetConfig,  # (Optional) For setting the configuration
+    capture_all,  # (Optional) For capturing all the attributes of a class
+    listener, # (Optional) For listening to a function
+)
 
-SetConfig(open_browser=False, ask_before_exit=True)
+SetConfig(
+    open_browser=False, 
+    ask_before_exit=True, 
+    quiet=True
+)
 
 
 # @TinyProb.capture_all
@@ -117,12 +125,23 @@ if __name__ == "__main__":
         a: int = 10
 
         def cycle(self):
-            self.a = (self.a + 1) % 10
             print(">>", f"Setting value to {self.a}")
+
+        @listener
+        @staticmethod
+        def Up():
+            print(">>", "Test function called")
+
+
+        @listener
+        @staticmethod
+        def Down():
+            print(">>", "Test function called")
+
 
     with TinyProb() as tp:
         my_class = MyClass()
 
         for _ in range(100000):
             my_class.cycle()
-            sleep(1)
+            sleep(10)

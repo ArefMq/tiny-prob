@@ -51,7 +51,6 @@ class TinyProb(WebServer):
                 pin_name: self.__pins[pin_name].read_value() for pin_name in read_pins
             }
 
-        print("res:: ", repr(res))
         return json.dumps(res)
 
     def __read_logs(self) -> str:

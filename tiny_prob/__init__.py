@@ -171,3 +171,12 @@ def capture_primitive(cls: T) -> T:
             pass
     return cls
 
+def listener(func):
+    """
+    Add a listener to the function. The function will be called whenever the event is triggered.
+    """
+    # FIXME: this is currently only working for static functions
+    ev = TinyProb().add_event_pin(name=func.__name__, namespace=func.__module__ if func.__module__ != "__main__" else None)
+    ev += func
+    return ev
+    

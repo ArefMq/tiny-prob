@@ -47,7 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
     pins.forEach((pin) => {
       if (variableRows.has(pin.name)) {
         // console.log("Updating existing row -> ", pin.name);
-        toUpdate.push(pin);
+        const row = variableRows.get(pin.name);
+        const readableField = row.querySelector('input[name="readable_field"]');
+        if (readableField.value === "true") {
+          toUpdate.push(pin);
+        }
       } else {
         // console.log("Adding new row -> ", pin.name);
         addNewPin(pin);
@@ -115,6 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pin.writable) {
       addEditableField(data);
     }
+
+    const readable_field = document.createElement("input");
+    readable_field.type = "hidden";
+    readable_field.name = "readable_field";
+    readable_field.value = pin.readable;
+    data.appendChild(readable_field);
 
     row.appendChild(topic);
     row.appendChild(data);
@@ -207,8 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // console.log(`Editing ${name} -> ${value}`);
     const payload = {
       write_pins: {
-        [name]: value
-      }
+        [name]: value,
+      },
     };
 
     fetch("/pin_value", {
@@ -268,3 +278,28 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchAllPins();
   refreshInterval = setInterval(fetchAllPins, currentRate);
 });
+
+// Function for trigger event
+const triggerEvent = (variable_name, value) => {
+  const payload = {
+    write_pins: {
+      [variable_name]: value,
+    },
+  };
+
+  fetch("/pin_value", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      // Handle the response data if needed
+      console.log("Trigger event response:", data);
+    })
+    .catch((error) => {
+      console.error("Error triggering event:", error);
+    });
+};
